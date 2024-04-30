@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+	<script src="$WEBAPIS/webapis/webapis.js"></script>
+</head>
+
+<body style="color:lime;font-size:x-large">
+	<object id="av-player" type="application/avplayer"></object>
+
+	<script>
+"use strict";
+window.addEventListener('tizenhwkey', async function(e) {
+	if (e.keyName == "back") {
+		try {
+			await webapis.avplay.stop();
+			await webapis.avplay.close();
+			console.log("CLEAN");
+		}
+		catch (myexception) {}
+		tizen.application.getCurrentApplication().exit();
+	}
+});
+
+function base64ToBytes(base64) {
+	return Uint8Array.from(atob(base64), (m) => m.codePointAt(0));
+}
+
+function bytesToBase64(bytes) {
+	return btoa(Array.from(bytes, (byte) => String.fromCodePoint(byte), ).join(""));
+}
+
+window.onload = async function() {
+	await webapis.avplay.open("https://media.axprod.net/TestVectors/v7-MultiDRM-SingleKey/Manifest_1080p.mpd");
+///	await webapis.avplay.open("https://media.axprod.net/TestVectors/v7-MultiDRM-SingleKey/Manifest.mpd");
+
+	await webapis.avplay.setListener({
+		ondrmevent: async function(event, data) {
+			if (data.name == "Challenge") {
+				let myfetch = await fetch("https://drm-widevine-licensing.axtest.net/AcquireLicense", {
+					method: "POST",
+					headers: {
+						"X-AxDRM-Message": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2ZXJzaW9uIjoxLCJjb21fa2V5X2lkIjoiYjMzNjRlYjUtNTFmNi00YWUzLThjOTgtMzNjZWQ1ZTMxYzc4IiwibWVzc2FnZSI6eyJ0eXBlIjoiZW50aXRsZW1lbnRfbWVzc2FnZSIsImtleXMiOlt7ImlkIjoiOWViNDA1MGQtZTQ0Yi00ODAyLTkzMmUtMjdkNzUwODNlMjY2IiwiZW5jcnlwdGVkX2tleSI6ImxLM09qSExZVzI0Y3Iya3RSNzRmbnc9PSJ9XX19.4lWwW46k-oWcah8oN18LPj5OLS5ZU-_AQv7fe0JhNjA"
+					},
+					body: base64ToBytes(data.challenge)
+				});
+				let myarray = new Uint8Array(await myfetch.arrayBuffer());
+				let LicenseParam = data.session_id + "PARAM_START_POSITION" + bytesToBase64(myarray) + "PARAM_START_POSITION";
+				webapis.avplay.setDrm("WIDEVINE_CDM", "widevine_license_data", LicenseParam);
+			}
+		},
+		onbufferingstart: function() {
+			/////console.log("Buffering start.");
+		},
+		onbufferingprogress: function(percent) {
+			///////////console.log("Buffering progress data : " + percent);
+		},
+		onbufferingcomplete: function() {
+			/////console.log("Buffering complete.");
+		},
+		oncurrentplaytime: function(vtime) {
+			//////console.log("Current playtime: " + vtime);
+		},
+		onstreamcompleted: function() {},
+		onevent: function(eventType, eventData) {
+			console.log("GGGGGGGGG event type: " + eventType + ", data: " + eventData);
+		},
+		onerror: function(errorData) {
+			console.log("event type error : " + errorData);
+		},
+		onerrormsg: function(eventid, errorMsg) {
+			console.log("TTTTT event type: " + eventid + ", data: " + errorMsg);
+		},
+		onsubtitlechange: function(duration, subtitles, type, attributes) {
+			//////console.log("XXXXXXX duration=" + duration + ", subtitles=" +  subtitles + ", type=" + type + ", attr=" + JSON.stringify(attributes));
+		},
+		onhttperrorevent: function(eventType, eventData) {
+			console.log(eventType + eventData);
+		},
+		onuserdata: function(type, attrdata) {
+			console.log(type + "\n" + attrdata);
+		},
+		onstreamcompleted: function() {}
+	});
+
+	var drmjson = {
+		"DeleteLicenseAfterUse": true,
+		"AppSession": "mysession",
+		"DataType": "MPEG-DASH"
+	};
+	await webapis.avplay.setDrm("WIDEVINE_CDM", "SetProperties", JSON.stringify(drmjson));
+	await webapis.avplay.setDisplayRect(0, 0, 1920, 1080);
+	await webapis.avplay.setStreamingProperty("ADAPTIVE_INFO", "FIXED_MAX_RESOLUTION=3840X2160");
+	await webapis.avplay.setDisplayMethod("PLAYER_DISPLAY_MODE_AUTO_ASPECT_RATIO");
+	await webapis.avplay.prepareAsync(
+		async function(successobj) {
+				console.log("JJJJJJJJJJJJJ " + webapis.avplay.getState());
+				await webapis.avplay.play();
+				console.log("KKKKKKKKKKKKKK " + webapis.avplay.getState());
+
+				var totalTrackInfo = webapis.avplay.getTotalTrackInfo();
+				console.log(totalTrackInfo);
+				let i;
+
+				let j = -1;
+				for (i in totalTrackInfo) {
+					if (totalTrackInfo[i].type === "AUDIO") {
+						j = i;
+						if ((JSON.parse(totalTrackInfo[i].extra_info)).language.toLowerCase().startsWith("en")) break;
+					}
+				}
+				if (j !== -1) {
+					console.log(totalTrackInfo[j]);
+					webapis.avplay.setSelectTrack("AUDIO", totalTrackInfo[j].index);
+				}
+
+				j = -1;
+				for (i in totalTrackInfo) {
+					let vextrainfo = JSON.parse(totalTrackInfo[i].extra_info.toLowerCase());
+					if (totalTrackInfo[i].type === "TEXT" && vextrainfo.fourcc.search(/plain|stpp|vtt/) === -1) {
+						console.log(vextrainfo);
+						if (vextrainfo.track_lang.startsWith("en")) {
+							j = i;
+							break;
+						}
+					}
+				}
+				if (j !== -1) {
+					console.log(totalTrackInfo[j]);
+					webapis.avplay.setSelectTrack("TEXT", totalTrackInfo[j].index);
+				}
+			},
+			function(errorobj) {
+				console.log("OOOOOOOOOOOO " + webapis.avplay.getState() + "\n" + JSON.stringify(errorobj));
+			}
+	);
+}
+	</script>
+</body>
+</html>
