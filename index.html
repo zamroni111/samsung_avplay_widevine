@@ -33,6 +33,8 @@ function bytesToBase64(bytes) {
 }
 
 window.onload = async function() {
+///make sure the HTTP content-type of the MPD file is application/dash+xml
+///https://storage.googleapis.com/shaka-demo-assets/angel-one-widevine/dash.mpd will fail because the HTTP content type is not dash.	
 	await webapis.avplay.open("https://media.axprod.net/TestVectors/v7-MultiDRM-SingleKey/Manifest_1080p.mpd");
 ///	await webapis.avplay.open("https://media.axprod.net/TestVectors/v7-MultiDRM-SingleKey/Manifest.mpd");
 
