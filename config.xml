@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <widget xmlns:tizen="http://tizen.org/ns/widgets" xmlns="http://www.w3.org/ns/widgets" id="http://yourdomain/wvplayer" version="1.0.0" viewmodes="maximized">
-    <access origin="*" subdomains="false"></access>
-    <tizen:application id="t5RA7lYGm3.wvplayer" package="t5RA7lYGm3" required_version="2.3"/>
-    <content src="index.html"/>
-    <feature name="http://tizen.org/feature/screen.size.normal.1080.1920"/>
-    <icon src="widevine.jpg"/>
-    <tizen:metadata key="http://tizen.org/metadata/app_ui_type/base_screen_resolution" value="extensive"/>
-    <name>wvplayer</name>
-    <tizen:privilege name="http://developer.samsung.com/privilege/drmplay"/>
-    <tizen:profile name="tv-samsung"/>
-    <tizen:setting screen-orientation="landscape" context-menu="enable" background-support="disable" encryption="enable" install-location="auto" hwkey-event="enable" sound-mode="shared"/>
+	<access origin="*" subdomains="false"></access>
+	<tizen:application id="t5RA7lYGm3.wvplayer" package="t5RA7lYGm3" required_version="2.3" />
+	<content src="index.html" />
+	<feature name="http://tizen.org/feature/screen.size.normal.1080.1920" />
+	<icon src="widevine.jpg" />
+	<tizen:metadata key="http://tizen.org/metadata/app_ui_type/base_screen_resolution" value="extensive" />
+	<name>wvplayer</name>
+	<tizen:privilege name="http://developer.samsung.com/privilege/drmplay" />
+	<tizen:privilege name="http://tizen.org/privilege/tv.inputdevice" />
+	<tizen:profile name="tv-samsung" />
+	<tizen:setting screen-orientation="landscape" context-menu="enable" background-support="disable" encryption="enable" install-location="auto" hwkey-event="enable" sound-mode="shared" />
 </widget>

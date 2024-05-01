@@ -24,6 +24,34 @@ window.addEventListener('tizenhwkey', async function(e) {
 	}
 });
 
+window.addEventListener('keydown', async function(keyobj) {
+	console.log(keyobj);
+	switch (keyobj.key) {
+		/////case "Enter":
+		case "XF86PlayBack":
+			if (webapis.avplay.getState() === "PLAYING") webapis.avplay.pause();
+			else {
+				try {
+					webapis.avplay.play();
+				}
+				catch (myexception) {}
+			}
+			break;
+		case "ArrowLeft":
+			try {
+				webapis.avplay.seekTo(webapis.avplay.getCurrentTime() - 30000);
+			}
+			catch (myexception) {}
+			break;
+		case "ArrowRight":
+			try {
+				webapis.avplay.seekTo(webapis.avplay.getCurrentTime() + 30000);
+			}
+			catch (myexception) {}
+			break;
+	}
+});
+
 function base64ToBytes(base64) {
 	return Uint8Array.from(atob(base64), (m) => m.codePointAt(0));
 }
@@ -33,10 +61,14 @@ function bytesToBase64(bytes) {
 }
 
 window.onload = async function() {
-///make sure the HTTP content-type of the MPD file is application/dash+xml
-///https://storage.googleapis.com/shaka-demo-assets/angel-one-widevine/dash.mpd will fail because the HTTP content type is not dash.	
+	let keyarray = tizen.tvinputdevice.getSupportedKeys();
+	let newarray = [];
+	let tempobj;
+	while ((tempobj = keyarray.pop()) !== undefined) newarray.push(tempobj.name);
+	tizen.tvinputdevice.registerKeyBatch(newarray);
+
 	await webapis.avplay.open("https://media.axprod.net/TestVectors/v7-MultiDRM-SingleKey/Manifest_1080p.mpd");
-///	await webapis.avplay.open("https://media.axprod.net/TestVectors/v7-MultiDRM-SingleKey/Manifest.mpd");
+	///	await webapis.avplay.open("https://media.axprod.net/TestVectors/v7-MultiDRM-SingleKey/Manifest.mpd");
 
 	await webapis.avplay.setListener({
 		ondrmevent: async function(event, data) {
@@ -102,6 +134,11 @@ window.onload = async function() {
 				await webapis.avplay.play();
 				console.log("KKKKKKKKKKKKKK " + webapis.avplay.getState());
 
+				try {
+					await webapis.avplay.setLooping(true);
+				}
+				catch (myexception) {}
+
 				var totalTrackInfo = webapis.avplay.getTotalTrackInfo();
 				console.log(totalTrackInfo);
 				let i;
@@ -141,4 +178,5 @@ window.onload = async function() {
 }
 	</script>
 </body>
+
 </html>
