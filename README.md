@@ -5,10 +5,10 @@ Make sure the HTTP content-type response header of the MPD file is "application/
 
 Additional features:
 1. Subtitle display using HTML table element
-2. Playback button control:
-a. play/pause button
-b. up button: fast forward 2/4/8x
-c. down & middle button: set 1x playback
-d. left & right button: seek -/+ 10 seconds
-e. channel up & down button: subtitle switcher
+2. Playback button control:<br>
+a. play/pause button<br>
+b. up button: fast forward 2/4/8x<br>
+c. down & middle button: set 1x playback<br>
+d. left & right button: seek -/+ 10 seconds<br>
+e. channel up & down button: subtitle switcher<br>
 f. return button: proper stop, close then exit.
