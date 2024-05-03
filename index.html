@@ -67,13 +67,13 @@ var vcurrenttext = 0;
 window.addEventListener('keydown', async function(keyobj) {
 	console.log(keyobj);
 	statustab.style.display = "table";
-//////	objvspeed.innerHTML = vspeed.toString() + "x &nbsp; &nbsp; &nbsp;";
+	//////	objvspeed.innerHTML = vspeed.toString() + "x &nbsp; &nbsp; &nbsp;";
 	endstatus = Date.now() + 7000;
 
 	switch (keyobj.key) {
 		case "ArrowLeft":
 		case "ArrowRight":
-			if (!vplaying || vseekto === null)	{
+			if (!vplaying || vseekto === null) {
 				vplaying = false;
 				if (vseekto === null) vseekto = webapis.avplay.getCurrentTime();
 				if (keyobj.key === "ArrowLeft") vseekto -= 10000;
@@ -129,7 +129,7 @@ window.addEventListener('keyup', async function(keyobj) {
 				vcurrenttext--;
 			case "XF86RaiseChannel":
 				if (texttrackarray !== null) {
-					if (keyobj.key === "XF86RaiseChannel")	vcurrenttext++;
+					if (keyobj.key === "XF86RaiseChannel") vcurrenttext++;
 					if (vcurrenttext < 0) vcurrenttext = texttrackarray.length - 1;
 					else if (vcurrenttext >= texttrackarray.length) vcurrenttext = 0;
 					await webapis.avplay.pause();
@@ -216,7 +216,7 @@ window.onload = async function() {
 						if ((JSON.parse(totalTrackInfo[i].extra_info)).language.toLowerCase().startsWith("en")) break;
 					}
 				}
-				
+
 				await webapis.avplay.pause();
 				vmaxduration = webapis.avplay.getDuration();
 				objduration.innerHTML = "/ " + Math.floor(vmaxduration / 60000).toString() + ":" + ((vmaxduration % 60000) / 1000).toString();
