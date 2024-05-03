@@ -7,9 +7,22 @@
 	<script src="$WEBAPIS/webapis/webapis.js"></script>
 </head>
 
-<body style="color:lime;font-size:x-large">
+<body style="color:lime;font-size:xxx-large;">
+	<table id="statustab" style="background-color:black;display:table;font-family:monospace;">
+		<tr>
+			<td id="objstatus"></td>
+			<td id="objduration"></td>
+		</tr>
+		<tr>
+			<td id="objvspeed">1x &nbsp; &nbsp; &nbsp;</td>
+			<td id="objtexttrack"></td>
+	</table>
 	<object id="av-player" type="application/avplayer"></object>
-
+	<table style="position:absolute;top:850px;width:100%;font-size:1.4em;text-align:center;background-color:rgba(0, 0, 0, 0);color:white;text-shadow:4px 1px black;">
+		<tr>
+			<td id='subtitle'>AaaaaaaaaaaaA<br>BbbbbbbbbbbbbbbbbB</td>
+		</tr>
+	</table>
 	<script>
 "use strict";
 window.addEventListener('tizenhwkey', async function(e) {
@@ -24,54 +37,128 @@ window.addEventListener('tizenhwkey', async function(e) {
 	}
 });
 
+var endstatus = 0;
+var vspeed = 1;
+var vplaying = false;
+var vmaxduration = 0;
+var vseekto = null;
+
+setInterval(async function() {
+	if (vplaying) {
+		if (endstatus > Date.now()) {
+			let ctime = webapis.avplay.getCurrentTime();
+			objstatus.innerHTML = "" + Math.floor(ctime / 60000).toString() + ":" + Math.floor((ctime % 60000) / 1000).toString();
+		}
+		else statustab.style.display = "none";
+
+		if (vseekto !== null) {
+			statustab.style.display = "table";
+			endstatus = Date.now() + 10000;
+			if (vseekto < 0) vseekto = 0;
+			else if (vseekto > vmaxduration) vseekto = vmaxduration - 20000;
+			await webapis.avplay.seekTo(vseekto);
+			vseekto = null;
+		}
+	}
+}, 1000);
+
+var texttrackarray = [];
+var vcurrenttext = 0;
 window.addEventListener('keydown', async function(keyobj) {
 	console.log(keyobj);
+	statustab.style.display = "table";
+//////	objvspeed.innerHTML = vspeed.toString() + "x &nbsp; &nbsp; &nbsp;";
+	endstatus = Date.now() + 7000;
+
 	switch (keyobj.key) {
-		/////case "Enter":
-		case "XF86PlayBack":
-			if (webapis.avplay.getState() === "PLAYING") webapis.avplay.pause();
-			else {
-				try {
-					webapis.avplay.play();
-				}
-				catch (myexception) {}
-			}
-			break;
 		case "ArrowLeft":
-			try {
-				webapis.avplay.seekTo(webapis.avplay.getCurrentTime() - 30000);
-			}
-			catch (myexception) {}
-			break;
 		case "ArrowRight":
-			try {
-				webapis.avplay.seekTo(webapis.avplay.getCurrentTime() + 30000);
+			if (!vplaying || vseekto === null)	{
+				vplaying = false;
+				if (vseekto === null) vseekto = webapis.avplay.getCurrentTime();
+				if (keyobj.key === "ArrowLeft") vseekto -= 10000;
+				else vseekto += 10000;
+				objstatus.innerHTML = Math.floor(vseekto / 60000).toString() + ":" + Math.floor((vseekto % 60000) / 1000).toString();
 			}
-			catch (myexception) {}
+			break;
+		default:
 			break;
 	}
 });
 
-function base64ToBytes(base64) {
-	return Uint8Array.from(atob(base64), (m) => m.codePointAt(0));
-}
+window.addEventListener('keyup', async function(keyobj) {
+	////	console.log(keyobj);
+	try {
+		switch (keyobj.key) {
+			case "XF86PlayBack":
+				vspeed = 1;
+				if (webapis.avplay.getState() === "PLAYING") {
+					await webapis.avplay.pause();
+				}
+				else {
+					await webapis.avplay.pause();
+					await webapis.avplay.setSpeed(1);
+					await webapis.avplay.play();
+				}
+				break;
+			case "Enter":
+			case "ArrowDown":
+				if (vspeed !== 1) {
+					await webapis.avplay.pause();
+					await webapis.avplay.setSpeed(1);
+					vspeed = 1;
+				}
+				await webapis.avplay.play();
+				break;
+			case "ArrowUp":
+				endstatus = Date.now() + 36000000;
+				await webapis.avplay.pause();
+				if (vspeed < 8) vspeed += vspeed; ///// 1,2,4,8
+				await webapis.avplay.setSpeed(vspeed);
+				await webapis.avplay.play();
+				console.log("vspeed " + vspeed);
+				break;
+			case "ArrowLeft":
+			case "ArrowRight":
+				await new Promise(r => setTimeout(r, 1000));
+				await webapis.avplay.setSpeed(1);
+				vspeed = 1;
+				vplaying = true;
+				break;
+			case "XF86LowerChannel":
+				vcurrenttext--;
+			case "XF86RaiseChannel":
+				if (texttrackarray !== null) {
+					if (keyobj.key === "XF86RaiseChannel")	vcurrenttext++;
+					if (vcurrenttext < 0) vcurrenttext = texttrackarray.length - 1;
+					else if (vcurrenttext >= texttrackarray.length) vcurrenttext = 0;
+					await webapis.avplay.pause();
+					await webapis.avplay.setSelectTrack("TEXT", texttrackarray[vcurrenttext][0]);
+					console.log(webapis.avplay.getCurrentStreamInfo());
+					objtexttrack.innerHTML = (vcurrenttext + 1).toString() + ":" + texttrackarray[vcurrenttext][1];
+					await webapis.avplay.play();
+				}
+				break;
+			default:
+				break;
+		}
+	}
+	catch (myexception) {
+		console.log(myexception)
+	}
+	objvspeed.innerHTML = vspeed.toString() + "x &nbsp; &nbsp; &nbsp;";
 
-function bytesToBase64(bytes) {
-	return btoa(Array.from(bytes, (byte) => String.fromCodePoint(byte), ).join(""));
-}
+});
 
 window.onload = async function() {
-	let keyarray = tizen.tvinputdevice.getSupportedKeys();
-	let newarray = [];
-	let tempobj;
-	while ((tempobj = keyarray.pop()) !== undefined) newarray.push(tempobj.name);
-	tizen.tvinputdevice.registerKeyBatch(newarray);
+	/////tizen.tvinputdevice.registerKey('MediaPlayPause');
+	tizen.tvinputdevice.registerKeyBatch(["MediaPlayPause", "ChannelUp", "ChannelDown"]);
 
 	await webapis.avplay.open("https://media.axprod.net/TestVectors/v7-MultiDRM-SingleKey/Manifest_1080p.mpd");
 	///	await webapis.avplay.open("https://media.axprod.net/TestVectors/v7-MultiDRM-SingleKey/Manifest.mpd");
 
 	await webapis.avplay.setListener({
-		ondrmevent: async function(event, data) {
+		ondrmevent: async function(type, data) {
 			if (data.name == "Challenge") {
 				let myfetch = await fetch("https://drm-widevine-licensing.axtest.net/AcquireLicense", {
 					method: "POST",
@@ -85,38 +172,24 @@ window.onload = async function() {
 				webapis.avplay.setDrm("WIDEVINE_CDM", "widevine_license_data", LicenseParam);
 			}
 		},
-		onbufferingstart: function() {
-			/////console.log("Buffering start.");
+		onevent: function(eventid, eventData) {
+			if (eventid !== "PLAYER_MSG_BITRATE_CHANGE") console.log("GGGGGGGGG event type: " + eventid + ", data: " + eventData);
 		},
-		onbufferingprogress: function(percent) {
-			///////////console.log("Buffering progress data : " + percent);
-		},
-		onbufferingcomplete: function() {
-			/////console.log("Buffering complete.");
-		},
-		oncurrentplaytime: function(vtime) {
-			//////console.log("Current playtime: " + vtime);
-		},
-		onstreamcompleted: function() {},
-		onevent: function(eventType, eventData) {
-			console.log("GGGGGGGGG event type: " + eventType + ", data: " + eventData);
-		},
-		onerror: function(errorData) {
-			console.log("event type error : " + errorData);
+		onerror: function(eventid) {
+			console.log("event type error : " + eventid);
 		},
 		onerrormsg: function(eventid, errorMsg) {
 			console.log("TTTTT event type: " + eventid + ", data: " + errorMsg);
 		},
-		onsubtitlechange: function(duration, subtitles, type, attributes) {
-			//////console.log("XXXXXXX duration=" + duration + ", subtitles=" +  subtitles + ", type=" + type + ", attr=" + JSON.stringify(attributes));
+		onsubtitlechange: function(duration, text, type, attributes) {
+			subtitle.innerHTML = text;
 		},
-		onhttperrorevent: function(eventType, eventData) {
-			console.log(eventType + eventData);
-		},
-		onuserdata: function(type, attrdata) {
-			console.log(type + "\n" + attrdata);
-		},
-		onstreamcompleted: function() {}
+		onstreamcompleted: async function() {
+			await webapis.avplay.pause();
+			await webapis.avplay.setSpeed(1);
+			await webapis.avplay.seekTo(0);
+			await webapis.avplay.play();
+		}
 	});
 
 	var drmjson = {
@@ -130,19 +203,12 @@ window.onload = async function() {
 	await webapis.avplay.setDisplayMethod("PLAYER_DISPLAY_MODE_AUTO_ASPECT_RATIO");
 	await webapis.avplay.prepareAsync(
 		async function(successobj) {
-				console.log("JJJJJJJJJJJJJ " + webapis.avplay.getState());
-				await webapis.avplay.play();
-				console.log("KKKKKKKKKKKKKK " + webapis.avplay.getState());
-
-				try {
-					await webapis.avplay.setLooping(true);
-				}
-				catch (myexception) {}
-
 				var totalTrackInfo = webapis.avplay.getTotalTrackInfo();
 				console.log(totalTrackInfo);
-				let i;
 
+				await webapis.avplay.play();
+
+				let i;
 				let j = -1;
 				for (i in totalTrackInfo) {
 					if (totalTrackInfo[i].type === "AUDIO") {
@@ -150,31 +216,52 @@ window.onload = async function() {
 						if ((JSON.parse(totalTrackInfo[i].extra_info)).language.toLowerCase().startsWith("en")) break;
 					}
 				}
-				if (j !== -1) {
-					console.log(totalTrackInfo[j]);
-					webapis.avplay.setSelectTrack("AUDIO", totalTrackInfo[j].index);
-				}
+				
+				await webapis.avplay.pause();
+				vmaxduration = webapis.avplay.getDuration();
+				objduration.innerHTML = "/ " + Math.floor(vmaxduration / 60000).toString() + ":" + ((vmaxduration % 60000) / 1000).toString();
 
-				j = -1;
+				if (j !== -1) webapis.avplay.setSelectTrack("AUDIO", totalTrackInfo[j].index);
+
 				for (i in totalTrackInfo) {
-					let vextrainfo = JSON.parse(totalTrackInfo[i].extra_info.toLowerCase());
-					if (totalTrackInfo[i].type === "TEXT" && vextrainfo.fourcc.search(/plain|stpp|vtt/) === -1) {
-						console.log(vextrainfo);
-						if (vextrainfo.track_lang.startsWith("en")) {
-							j = i;
-							break;
-						}
+					if (totalTrackInfo[i].type === "TEXT") {
+						let vextrainfo = JSON.parse(totalTrackInfo[i].extra_info);
+						if (vextrainfo.fourCC.search(/stpp/) === -1)
+							texttrackarray.push([totalTrackInfo[i].index, vextrainfo.track_lang]);
 					}
 				}
-				if (j !== -1) {
-					console.log(totalTrackInfo[j]);
-					webapis.avplay.setSelectTrack("TEXT", totalTrackInfo[j].index);
+				console.log(texttrackarray);
+				if (texttrackarray.length !== 0) {
+					await webapis.avplay.setSelectTrack("TEXT", texttrackarray[0][0]);
+					////////vcurrenttext = 0;
+					objtexttrack.innerHTML = (1).toString() + ":" + texttrackarray[0][1];
+					await webapis.avplay.seekTo(21000);
+					console.log(webapis.avplay.getCurrentStreamInfo());
 				}
+				if (texttrackarray.length < 2) texttrackarray = null;
+
+				try {
+					await webapis.avplay.setLooping(true);
+				}
+				catch (myexception) {}
+				await webapis.avplay.play();
+
+				vplaying = true;
+				statustab.style.display = "table";
+				endstatus = Date.now() + 15000;
 			},
 			function(errorobj) {
 				console.log("OOOOOOOOOOOO " + webapis.avplay.getState() + "\n" + JSON.stringify(errorobj));
 			}
 	);
+}
+
+function base64ToBytes(base64) {
+	return Uint8Array.from(atob(base64), (m) => m.codePointAt(0));
+}
+
+function bytesToBase64(bytes) {
+	return btoa(Array.from(bytes, (byte) => String.fromCodePoint(byte), ).join(""));
 }
 	</script>
 </body>
