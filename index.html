@@ -15,7 +15,7 @@
 		</tr>
 		<tr>
 			<td id="objvspeed">1x &nbsp; &nbsp; &nbsp;</td>
-			<td id="objtexttrack"></td>
+			<td id="objtexttrack">Tnone</td>
 	</table>
 	<object id="av-player" type="application/avplayer"></object>
 	<table style="position:absolute;top:850px;width:100%;font-size:1.4em;text-align:center;background-color:rgba(0, 0, 0, 0);color:white;text-shadow:4px 1px black;">
@@ -126,9 +126,15 @@ window.addEventListener('keyup', async function(keyobj) {
 				vplaying = true;
 				break;
 			case "XF86ChannelGuide":
-				if (objsubtitle.style.display === 'none') objsubtitle.style.display = 'block';
-				else objsubtitle.style.display = 'none'
-				console.log(objsubtitle.style.display);
+				if (objsubtitle.style.display === 'none') {
+					objsubtitle.style.display = 'block';
+					objtexttrack.innerHTML = "T" + (vcurrenttext + 1).toString() + ":" + texttrackarray[vcurrenttext][1];
+				}
+				else {
+					objsubtitle.style.display = 'none';
+					objtexttrack.innerHTML = "Tnone";
+				}
+				////////console.log(objsubtitle.style.display);
 				break;
 			case "XF86LowerChannel":
 				if (texttrackarray !== null) {
