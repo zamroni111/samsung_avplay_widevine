@@ -20,7 +20,7 @@
 	<object id="av-player" type="application/avplayer"></object>
 	<table style="position:absolute;top:850px;width:100%;font-size:1.4em;text-align:center;background-color:rgba(0, 0, 0, 0);color:white;text-shadow:4px 1px black;">
 		<tr>
-			<td id='subtitle'>AaaaaaaaaaaaA<br>BbbbbbbbbbbbbbbbbB</td>
+			<td id='objsubtitle'>AaaaaaaaaaaaA<br>BbbbbbbbbbbbbbbbbB</td>
 		</tr>
 	</table>
 	<script>
@@ -37,7 +37,7 @@ window.addEventListener('tizenhwkey', async function(e) {
 	}
 });
 
-var endstatus = 0;
+var vshowstatus = 0;
 var vspeed = 1;
 var vplaying = false;
 var vmaxduration = 0;
@@ -45,15 +45,16 @@ var vseekto = null;
 
 setInterval(async function() {
 	if (vplaying) {
-		if (endstatus > Date.now()) {
+		if (vshowstatus > 0) {
 			let ctime = webapis.avplay.getCurrentTime();
 			objstatus.innerHTML = "" + Math.floor(ctime / 60000).toString() + ":" + Math.floor((ctime % 60000) / 1000).toString();
 		}
 		else statustab.style.display = "none";
+		vshowstatus--;
 
 		if (vseekto !== null) {
 			statustab.style.display = "table";
-			endstatus = Date.now() + 10000;
+			vshowstatus = 10;
 			if (vseekto < 0) vseekto = 0;
 			else if (vseekto > vmaxduration) vseekto = vmaxduration - 20000;
 			await webapis.avplay.seekTo(vseekto);
@@ -65,10 +66,9 @@ setInterval(async function() {
 var texttrackarray = [];
 var vcurrenttext = 0;
 window.addEventListener('keydown', async function(keyobj) {
-	console.log(keyobj);
+	/////	console.log(keyobj);
 	statustab.style.display = "table";
-	//////	objvspeed.innerHTML = vspeed.toString() + "x &nbsp; &nbsp; &nbsp;";
-	endstatus = Date.now() + 7000;
+	vshowstatus = 10;
 
 	switch (keyobj.key) {
 		case "ArrowLeft":
@@ -111,12 +111,12 @@ window.addEventListener('keyup', async function(keyobj) {
 				await webapis.avplay.play();
 				break;
 			case "ArrowUp":
-				endstatus = Date.now() + 36000000;
 				await webapis.avplay.pause();
+				vshowstatus = 36000;
 				if (vspeed < 8) vspeed += vspeed; ///// 1,2,4,8
 				await webapis.avplay.setSpeed(vspeed);
+				/////console.log("vspeed " + vspeed);
 				await webapis.avplay.play();
-				console.log("vspeed " + vspeed);
 				break;
 			case "ArrowLeft":
 			case "ArrowRight":
@@ -125,17 +125,36 @@ window.addEventListener('keyup', async function(keyobj) {
 				vspeed = 1;
 				vplaying = true;
 				break;
+			case "XF86ChannelGuide":
+				if (objsubtitle.style.display === 'none') objsubtitle.style.display = 'block';
+				else objsubtitle.style.display = 'none'
+				console.log(objsubtitle.style.display);
+				break;
 			case "XF86LowerChannel":
-				vcurrenttext--;
+				if (texttrackarray !== null) {
+					await webapis.avplay.pause();
+					objsubtitle.style.display = 'block'
+
+					if (vcurrenttext !== 0) vcurrenttext--;
+					else vcurrenttext = texttrackarray.length - 1;
+
+					await webapis.avplay.setSelectTrack("TEXT", texttrackarray[vcurrenttext][0]);
+					//////console.log(webapis.avplay.getCurrentStreamInfo());
+					objtexttrack.innerHTML = "T" + (vcurrenttext + 1).toString() + ":" + texttrackarray[vcurrenttext][1];
+					await webapis.avplay.play();
+				}
+				break;
 			case "XF86RaiseChannel":
 				if (texttrackarray !== null) {
-					if (keyobj.key === "XF86RaiseChannel") vcurrenttext++;
-					if (vcurrenttext < 0) vcurrenttext = texttrackarray.length - 1;
-					else if (vcurrenttext >= texttrackarray.length) vcurrenttext = 0;
 					await webapis.avplay.pause();
+					objsubtitle.style.display = 'block'
+
+					if (vcurrenttext !== texttrackarray.length - 1) vcurrenttext++;
+					else vcurrenttext = 0;
+
 					await webapis.avplay.setSelectTrack("TEXT", texttrackarray[vcurrenttext][0]);
-					console.log(webapis.avplay.getCurrentStreamInfo());
-					objtexttrack.innerHTML = (vcurrenttext + 1).toString() + ":" + texttrackarray[vcurrenttext][1];
+					////////console.log(webapis.avplay.getCurrentStreamInfo());
+					objtexttrack.innerHTML = "T" + (vcurrenttext + 1).toString() + ":" + texttrackarray[vcurrenttext][1];
 					await webapis.avplay.play();
 				}
 				break;
@@ -151,8 +170,7 @@ window.addEventListener('keyup', async function(keyobj) {
 });
 
 window.onload = async function() {
-	/////tizen.tvinputdevice.registerKey('MediaPlayPause');
-	tizen.tvinputdevice.registerKeyBatch(["MediaPlayPause", "ChannelUp", "ChannelDown"]);
+	tizen.tvinputdevice.registerKeyBatch(["MediaPlayPause", "ChannelUp", "ChannelDown", "Guide"]);
 
 	await webapis.avplay.open("https://media.axprod.net/TestVectors/v7-MultiDRM-SingleKey/Manifest_1080p.mpd");
 	///	await webapis.avplay.open("https://media.axprod.net/TestVectors/v7-MultiDRM-SingleKey/Manifest.mpd");
@@ -182,7 +200,7 @@ window.onload = async function() {
 			console.log("TTTTT event type: " + eventid + ", data: " + errorMsg);
 		},
 		onsubtitlechange: function(duration, text, type, attributes) {
-			subtitle.innerHTML = text;
+			objsubtitle.innerHTML = text;
 		},
 		onstreamcompleted: async function() {
 			await webapis.avplay.pause();
@@ -233,22 +251,22 @@ window.onload = async function() {
 				console.log(texttrackarray);
 				if (texttrackarray.length !== 0) {
 					await webapis.avplay.setSelectTrack("TEXT", texttrackarray[0][0]);
-					////////vcurrenttext = 0;
-					objtexttrack.innerHTML = (1).toString() + ":" + texttrackarray[0][1];
+					vcurrenttext = 0;
+					objtexttrack.innerHTML = "T" + (1).toString() + ":" + texttrackarray[0][1];
 					await webapis.avplay.seekTo(21000);
 					console.log(webapis.avplay.getCurrentStreamInfo());
 				}
-				if (texttrackarray.length < 2) texttrackarray = null;
-
-				try {
+				if (texttrackarray.length === 1) texttrackarray = null; // because there is none to switch to
+				/*try {
 					await webapis.avplay.setLooping(true);
 				}
-				catch (myexception) {}
+				catch (myexception) {}*/
+
 				await webapis.avplay.play();
 
 				vplaying = true;
 				statustab.style.display = "table";
-				endstatus = Date.now() + 15000;
+				vshowstatus = 15;
 			},
 			function(errorobj) {
 				console.log("OOOOOOOOOOOO " + webapis.avplay.getState() + "\n" + JSON.stringify(errorobj));
