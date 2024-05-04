@@ -12,5 +12,6 @@ b. up button: fast forward 2/4/8x<br>
 c. down & middle button: set 1x playback<br>
 d. left & right button: seek -/+ 10 seconds<br>
 e. channel up & down button: subtitle switcher<br>
-f. return button: proper stop, close then exit.
+f. channel guide button: show/hide subtitle<br>
+g. return button: proper stop, close then exit.
 3. Status text display: current play position, video duration, playback speed, subtitle id.
