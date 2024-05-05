@@ -48,9 +48,9 @@ setInterval(async function() {
 		if (vshowstatus > 0) {
 			let ctime = webapis.avplay.getCurrentTime();
 			objstatus.innerHTML = "" + Math.floor(ctime / 60000).toString() + ":" + Math.floor((ctime % 60000) / 1000).toString();
+			vshowstatus--;
 		}
 		else statustab.style.display = "none";
-		vshowstatus--;
 
 		if (vseekto !== null) {
 			statustab.style.display = "table";
