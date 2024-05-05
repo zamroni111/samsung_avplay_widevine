@@ -231,6 +231,9 @@ window.onload = async function() {
 				console.log(totalTrackInfo);
 
 				await webapis.avplay.play();
+				await webapis.avplay.pause();
+				vmaxduration = webapis.avplay.getDuration();
+				objduration.innerHTML = "/ " + Math.floor(vmaxduration / 60000).toString() + ":" + ((vmaxduration % 60000) / 1000).toString();
 
 				let i;
 				let j = -1;
@@ -241,9 +244,6 @@ window.onload = async function() {
 					}
 				}
 
-				await webapis.avplay.pause();
-				vmaxduration = webapis.avplay.getDuration();
-				objduration.innerHTML = "/ " + Math.floor(vmaxduration / 60000).toString() + ":" + ((vmaxduration % 60000) / 1000).toString();
 
 				if (j !== -1) webapis.avplay.setSelectTrack("AUDIO", totalTrackInfo[j].index);
 
