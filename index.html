@@ -128,40 +128,41 @@ window.addEventListener('keyup', async function(keyobj) {
 			case "XF86ChannelGuide":
 				if (objsubtitle.style.display === 'none') {
 					objsubtitle.style.display = 'block';
-					objtexttrack.innerHTML = "T" + (vcurrenttext + 1).toString() + ":" + texttrackarray[vcurrenttext][1];
+					if (texttrackarray.length !== 0) objtexttrack.innerHTML = "T" + (vcurrenttext + 1).toString() + ":" + texttrackarray[vcurrenttext][1];
 				}
 				else {
 					objsubtitle.style.display = 'none';
 					objtexttrack.innerHTML = "Tnone";
 				}
-				////////console.log(objsubtitle.style.display);
 				break;
 			case "XF86LowerChannel":
-				if (texttrackarray !== null) {
-					await webapis.avplay.pause();
+				if (texttrackarray.length > 1) {
+					//////await webapis.avplay.pause();
 					objsubtitle.style.display = 'block'
 
 					if (vcurrenttext !== 0) vcurrenttext--;
 					else vcurrenttext = texttrackarray.length - 1;
 
 					await webapis.avplay.setSelectTrack("TEXT", texttrackarray[vcurrenttext][0]);
-					//////console.log(webapis.avplay.getCurrentStreamInfo());
+					console.log(vcurrenttext);
+					console.log(webapis.avplay.getCurrentStreamInfo());
 					objtexttrack.innerHTML = "T" + (vcurrenttext + 1).toString() + ":" + texttrackarray[vcurrenttext][1];
-					await webapis.avplay.play();
+					///////await webapis.avplay.play();
 				}
 				break;
 			case "XF86RaiseChannel":
-				if (texttrackarray !== null) {
-					await webapis.avplay.pause();
+				if (texttrackarray.length > 1) {
+					//////await webapis.avplay.pause();
 					objsubtitle.style.display = 'block'
 
 					if (vcurrenttext !== texttrackarray.length - 1) vcurrenttext++;
 					else vcurrenttext = 0;
 
 					await webapis.avplay.setSelectTrack("TEXT", texttrackarray[vcurrenttext][0]);
-					////////console.log(webapis.avplay.getCurrentStreamInfo());
+					console.log(vcurrenttext);
+					console.log(webapis.avplay.getCurrentStreamInfo());
 					objtexttrack.innerHTML = "T" + (vcurrenttext + 1).toString() + ":" + texttrackarray[vcurrenttext][1];
-					await webapis.avplay.play();
+					///////////await webapis.avplay.play();
 				}
 				break;
 			default:
@@ -262,7 +263,7 @@ window.onload = async function() {
 					await webapis.avplay.seekTo(21000);
 					console.log(webapis.avplay.getCurrentStreamInfo());
 				}
-				if (texttrackarray.length === 1) texttrackarray = null; // because there is none to switch to
+				///////if (texttrackarray.length === 1) texttrackarray = null; // because there is none to switch to
 				/*try {
 					await webapis.avplay.setLooping(true);
 				}
