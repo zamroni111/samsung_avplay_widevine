@@ -228,11 +228,12 @@ window.onload = async function() {
 	await webapis.avplay.setDisplayMethod("PLAYER_DISPLAY_MODE_AUTO_ASPECT_RATIO");
 	await webapis.avplay.prepareAsync(
 		async function(successobj) {
+				await webapis.avplay.play();
+				await webapis.avplay.pause();
+				
 				var totalTrackInfo = webapis.avplay.getTotalTrackInfo();
 				console.log(totalTrackInfo);
 
-				await webapis.avplay.play();
-				await webapis.avplay.pause();
 				vmaxduration = webapis.avplay.getDuration();
 				objduration.innerHTML = "/ " + Math.floor(vmaxduration / 60000).toString() + ":" + ((vmaxduration % 60000) / 1000).toString();
 
