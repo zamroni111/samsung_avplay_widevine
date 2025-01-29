@@ -1,5 +1,5 @@
 Simple Samsung AVPlay Widevine Player.<br>
-It's tested on Tizen 6.5 TV.
+It's tested on Tizen 6.5 TV (2022 series).
 
 Make sure the HTTP content-type response header of the MPD file is "application/dash+xml".<br>
 "https://storage.googleapis.com/shaka-demo-assets/angel-one-widevine/dash.mpd" will fail due to mismatched content type.
