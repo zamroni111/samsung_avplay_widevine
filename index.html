@@ -25,156 +25,168 @@
 	</table>
 	<script>
 "use strict";
-window.addEventListener('tizenhwkey', async function(e) {
-	if (e.keyName == "back") {
-		try {
-			await webapis.avplay.stop();
-			await webapis.avplay.close();
-			console.log("CLEAN");
-		}
-		catch (myexception) {}
-		tizen.application.getCurrentApplication().exit();
-	}
-});
-
-var vshowstatus = 0;
-var vspeed = 1;
-var vplaying = false;
-var vmaxduration = 0;
-var vseekto = null;
-
-setInterval(async function() {
-	if (vplaying) {
-		if (vshowstatus > 0) {
-			let ctime = webapis.avplay.getCurrentTime();
-			objstatus.innerHTML = "" + Math.floor(ctime / 60000).toString() + ":" + Math.floor((ctime % 60000) / 1000).toString();
-			vshowstatus--;
-		}
-		else statustab.style.display = "none";
-
-		if (vseekto !== null) {
-			statustab.style.display = "table";
-			vshowstatus = 10;
-			if (vseekto < 0) vseekto = 0;
-			else if (vseekto > vmaxduration) vseekto = vmaxduration - 20000;
-			await webapis.avplay.seekTo(vseekto);
-			vseekto = null;
-		}
-	}
-}, 1000);
-
-var texttrackarray = [];
-var vcurrenttext = 0;
-window.addEventListener('keydown', async function(keyobj) {
-	/////	console.log(keyobj);
-	statustab.style.display = "table";
-	vshowstatus = 10;
-
-	switch (keyobj.key) {
-		case "ArrowLeft":
-		case "ArrowRight":
-			if (!vplaying || vseekto === null) {
-				vplaying = false;
-				if (vseekto === null) vseekto = webapis.avplay.getCurrentTime();
-				if (keyobj.key === "ArrowLeft") vseekto -= 10000;
-				else vseekto += 10000;
-				objstatus.innerHTML = Math.floor(vseekto / 60000).toString() + ":" + Math.floor((vseekto % 60000) / 1000).toString();
+window.addEventListener(
+	'tizenhwkey',
+	async function(e) {
+		if (e.keyName === "back") {
+			try {
+				await webapis.avplay.stop();
+				await webapis.avplay.close();
+				console.log("CLEAN");
 			}
-			break;
-		default:
-			break;
+			catch (myexception) {}
+			tizen.application.getCurrentApplication().exit();
+		}
 	}
-});
+);
 
-window.addEventListener('keyup', async function(keyobj) {
-	////	console.log(keyobj);
-	try {
+let vshowstatus = 0;
+let vspeed = 1;
+let vplaying = false;
+let vmaxduration = 0;
+let vseekto = null;
+
+setInterval(
+	async function() {
+			if (vplaying) {
+				if (vshowstatus > 0) {
+					let ctime = webapis.avplay.getCurrentTime();
+					objstatus.innerHTML = "" + Math.floor(ctime / 60000).toString() + ":" + Math.floor((ctime % 60000) / 1000).toString();
+					vshowstatus--;
+				}
+				else statustab.style.display = "none";
+
+				if (vseekto !== null) {
+					statustab.style.display = "table";
+					vshowstatus = 10;
+					if (vseekto < 0) vseekto = 0;
+					else if (vseekto > vmaxduration) vseekto = vmaxduration - 20000;
+					await webapis.avplay.seekTo(vseekto);
+					vseekto = null;
+				}
+			}
+		},
+		1000
+);
+
+let texttrackarray = [];
+let vcurrenttext = 0;
+window.addEventListener(
+	'keydown',
+	async function(keyobj) {
+		/////	console.log(keyobj);
+		statustab.style.display = "table";
+		vshowstatus = 10;
+
 		switch (keyobj.key) {
-			case "XF86PlayBack":
-				vspeed = 1;
-				if (webapis.avplay.getState() === "PLAYING") {
-					await webapis.avplay.pause();
-				}
-				else {
-					await webapis.avplay.pause();
-					await webapis.avplay.setSpeed(1);
-					await webapis.avplay.play();
-				}
-				break;
-			case "Enter":
-			case "ArrowDown":
-				if (vspeed !== 1) {
-					await webapis.avplay.pause();
-					await webapis.avplay.setSpeed(1);
-					vspeed = 1;
-				}
-				await webapis.avplay.play();
-				break;
-			case "ArrowUp":
-				await webapis.avplay.pause();
-				vshowstatus = 36000;
-				if (vspeed < 8) vspeed += vspeed; ///// 1,2,4,8
-				await webapis.avplay.setSpeed(vspeed);
-				/////console.log("vspeed " + vspeed);
-				await webapis.avplay.play();
-				break;
 			case "ArrowLeft":
 			case "ArrowRight":
-				await new Promise(r => setTimeout(r, 1000));
-				await webapis.avplay.setSpeed(1);
-				vspeed = 1;
-				vplaying = true;
-				break;
-			case "XF86ChannelGuide":
-				if (objsubtitle.style.display === 'none') {
-					objsubtitle.style.display = 'block';
-					if (texttrackarray.length !== 0) objtexttrack.innerHTML = "T" + (vcurrenttext + 1).toString() + ":" + texttrackarray[vcurrenttext][1];
-				}
-				else {
-					objsubtitle.style.display = 'none';
-					objtexttrack.innerHTML = "Tnone";
-				}
-				break;
-			case "XF86LowerChannel":
-				if (texttrackarray.length > 1) {
-					//////await webapis.avplay.pause();
-					objsubtitle.style.display = 'block'
-
-					if (vcurrenttext !== 0) vcurrenttext--;
-					else vcurrenttext = texttrackarray.length - 1;
-
-					await webapis.avplay.setSelectTrack("TEXT", texttrackarray[vcurrenttext][0]);
-					console.log(vcurrenttext);
-					console.log(webapis.avplay.getCurrentStreamInfo());
-					objtexttrack.innerHTML = "T" + (vcurrenttext + 1).toString() + ":" + texttrackarray[vcurrenttext][1];
-					///////await webapis.avplay.play();
-				}
-				break;
-			case "XF86RaiseChannel":
-				if (texttrackarray.length > 1) {
-					//////await webapis.avplay.pause();
-					objsubtitle.style.display = 'block'
-
-					if (vcurrenttext !== texttrackarray.length - 1) vcurrenttext++;
-					else vcurrenttext = 0;
-
-					await webapis.avplay.setSelectTrack("TEXT", texttrackarray[vcurrenttext][0]);
-					console.log(vcurrenttext);
-					console.log(webapis.avplay.getCurrentStreamInfo());
-					objtexttrack.innerHTML = "T" + (vcurrenttext + 1).toString() + ":" + texttrackarray[vcurrenttext][1];
-					///////////await webapis.avplay.play();
+				if (!vplaying || vseekto === null) {
+					vplaying = false;
+					if (vseekto === null) vseekto = webapis.avplay.getCurrentTime();
+					if (keyobj.key === "ArrowLeft") vseekto -= 10000;
+					else vseekto += 10000;
+					objstatus.innerHTML = Math.floor(vseekto / 60000).toString() + ":" + Math.floor((vseekto % 60000) / 1000).toString();
 				}
 				break;
 			default:
 				break;
 		}
 	}
-	catch (myexception) {
-		console.log(myexception)
-	}
-	objvspeed.innerHTML = vspeed.toString() + "x &nbsp; &nbsp; &nbsp;";
+);
 
-});
+window.addEventListener(
+	'keyup',
+	async function(keyobj) {
+		////	console.log(keyobj);
+		try {
+			switch (keyobj.key) {
+				case "XF86PlayBack":
+					vspeed = 1;
+					if (webapis.avplay.getState() === "PLAYING") {
+						await webapis.avplay.pause();
+					}
+					else {
+						await webapis.avplay.pause();
+						await webapis.avplay.setSpeed(1);
+						await webapis.avplay.play();
+					}
+					break;
+				case "Enter":
+				case "ArrowDown":
+					if (vspeed !== 1) {
+						await webapis.avplay.pause();
+						await webapis.avplay.setSpeed(1);
+						vspeed = 1;
+					}
+					await webapis.avplay.play();
+					break;
+				case "ArrowUp":
+					await webapis.avplay.pause();
+					vshowstatus = 36000;
+					if (vspeed < 8) vspeed += vspeed; ///// 1,2,4,8
+					await webapis.avplay.setSpeed(vspeed);
+					/////console.log("vspeed " + vspeed);
+					await webapis.avplay.play();
+					break;
+				case "ArrowLeft":
+				case "ArrowRight":
+					await new Promise(r => setTimeout(r, 1000));
+					await webapis.avplay.setSpeed(1);
+					vspeed = 1;
+					vplaying = true;
+					break;
+				case "XF86ChannelGuide":
+					if (objsubtitle.style.display === 'none') {
+						objsubtitle.style.display = 'block';
+						if (texttrackarray.length !== 0) objtexttrack.innerHTML = "T" + (vcurrenttext + 1).toString() + ":" + texttrackarray[vcurrenttext][1];
+					}
+					else {
+						objsubtitle.style.display = 'none';
+						objtexttrack.innerHTML = "Tnone";
+					}
+					break;
+				case "XF86LowerChannel":
+					if (texttrackarray.length > 1) {
+						//////await webapis.avplay.pause();
+						objsubtitle.style.display = 'block'
+
+						if (vcurrenttext !== 0) vcurrenttext--;
+						else vcurrenttext = texttrackarray.length - 1;
+
+						await webapis.avplay.setSelectTrack("TEXT", texttrackarray[vcurrenttext][0]);
+						console.log(vcurrenttext);
+						console.log(webapis.avplay.getCurrentStreamInfo());
+						objtexttrack.innerHTML = "T" + (vcurrenttext + 1).toString() + ":" + texttrackarray[vcurrenttext][1];
+						///////await webapis.avplay.play();
+					}
+					break;
+				case "XF86RaiseChannel":
+					if (texttrackarray.length > 1) {
+						//////await webapis.avplay.pause();
+						objsubtitle.style.display = 'block'
+
+						if (vcurrenttext !== texttrackarray.length - 1) vcurrenttext++;
+						else vcurrenttext = 0;
+
+						await webapis.avplay.setSelectTrack("TEXT", texttrackarray[vcurrenttext][0]);
+						console.log(vcurrenttext);
+						console.log(webapis.avplay.getCurrentStreamInfo());
+						objtexttrack.innerHTML = "T" + (vcurrenttext + 1).toString() + ":" + texttrackarray[vcurrenttext][1];
+						///////////await webapis.avplay.play();
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		catch (myexception) {
+			console.log(myexception)
+		}
+		objvspeed.innerHTML = vspeed.toString() + "x &nbsp; &nbsp; &nbsp;";
+
+	}
+);
 
 window.onload = async function() {
 	tizen.tvinputdevice.registerKeyBatch(["MediaPlayPause", "ChannelUp", "ChannelDown", "Guide"]);
@@ -184,13 +196,13 @@ window.onload = async function() {
 
 	await webapis.avplay.setListener({
 		ondrmevent: async function(type, data) {
-			if (data.name == "Challenge") {
+			if (data.name === "Challenge") {
 				let myfetch = await fetch("https://drm-widevine-licensing.axtest.net/AcquireLicense", {
-					method: "POST",
-					headers: {
+					"method": "POST",
+					"headers": {
 						"X-AxDRM-Message": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2ZXJzaW9uIjoxLCJjb21fa2V5X2lkIjoiYjMzNjRlYjUtNTFmNi00YWUzLThjOTgtMzNjZWQ1ZTMxYzc4IiwibWVzc2FnZSI6eyJ0eXBlIjoiZW50aXRsZW1lbnRfbWVzc2FnZSIsImtleXMiOlt7ImlkIjoiOWViNDA1MGQtZTQ0Yi00ODAyLTkzMmUtMjdkNzUwODNlMjY2IiwiZW5jcnlwdGVkX2tleSI6ImxLM09qSExZVzI0Y3Iya3RSNzRmbnc9PSJ9XX19.4lWwW46k-oWcah8oN18LPj5OLS5ZU-_AQv7fe0JhNjA"
 					},
-					body: base64ToBytes(data.challenge)
+					"body": base64ToBytes(data.challenge)
 				});
 				let myarray = new Uint8Array(await myfetch.arrayBuffer());
 				let LicenseParam = data.session_id + "PARAM_START_POSITION" + bytesToBase64(myarray) + "PARAM_START_POSITION";
@@ -217,7 +229,7 @@ window.onload = async function() {
 		}
 	});
 
-	var drmjson = {
+	let drmjson = {
 		"DeleteLicenseAfterUse": true,
 		"AppSession": "mysession",
 		"DataType": "MPEG-DASH"
@@ -230,8 +242,8 @@ window.onload = async function() {
 		async function(successobj) {
 				await webapis.avplay.play();
 				await webapis.avplay.pause();
-				
-				var totalTrackInfo = webapis.avplay.getTotalTrackInfo();
+
+				let totalTrackInfo = webapis.avplay.getTotalTrackInfo();
 				console.log(totalTrackInfo);
 
 				vmaxduration = webapis.avplay.getDuration();
@@ -245,7 +257,6 @@ window.onload = async function() {
 						if ((JSON.parse(totalTrackInfo[i].extra_info)).language.toLowerCase().startsWith("en")) break;
 					}
 				}
-
 
 				if (j !== -1) webapis.avplay.setSelectTrack("AUDIO", totalTrackInfo[j].index);
 
